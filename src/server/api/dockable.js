@@ -23,65 +23,60 @@ router.get("/:stationid/:bikestoreturn", async (req, res, next) => {
         message: "Entering GET /dockable/:stationid/:bikestoreturn"
     });
 
-    let err = null;
+    const { stationid, bikestoreturn } = req.params;
+    let stationId;
+    let bikesCount;
+    try {
+        stationId = formatStrToNum(stationid);
+        bikesCount = formatStrToNum(bikestoreturn);
+    }
+    catch(e) {
+        return next(new Error(`[Bad Request] Station ID and/or Bike Count format error: ${e.message}`), req);
+    }
+
     let result = {};
-    if(!err) {
-        const { stationid, bikestoreturn } = req.params;
-        let stationId;
-        let bikesCount;
-        
-        try {
-            stationId = formatStrToNum(stationid);
-            bikesCount = formatStrToNum(bikestoreturn);
-        }
-        catch(e) {
-            err = new Error(`[Bad Request] Station ID and/or Bike Count format error: ${e.message}`);
-            next(err, req);
-        }
-
-        if(stationId && bikesCount) {
-            const originalUrl = req.originalUrl;
-            const value = cache.read(originalUrl);
-            if(value.length) {
-                result = value[0]; // result found in the cache
-            } else {
-                let stationList = cache.read("/stations"); // check list already in the cache
-                if(!stationList.length) {
-                    try {
-                        const list = await getCitiBikeData();
-                        if(list.length) {
-                            cache.write(originalUrl, list); // write to cache
-                        }
-                        stationList = list;
+    if(stationId && bikesCount) {
+        const originalUrl = req.originalUrl;
+        const value = cache.read(originalUrl);
+        if(value.length) {
+            result = value[0]; // result found in the cache
+        } else {
+            let stationList = cache.read("/stations"); // check list already in the cache
+            if(!stationList.length) {
+                try {
+                    const list = await getCitiBikeData();
+                    if(list.length) {
+                        cache.write(originalUrl, list); // write to cache
                     }
-                    catch(e) {
-                        err = new Error(`[${e.status}] ${e.message}`);
-                        next(err, req);
+                    stationList = list;
+                }
+                catch(e) {
+                    return next(new Error(`[${e.status}] ${e.message}`), req);
+                }
+            }
+
+            if(stationList) {
+                const station = stationList.filter(station => station["id"] === stationId)[0]; // get station by station id
+                if(station && !isEmpty(station)) {
+                    const dockable = station["availableDocks"] >= bikesCount;
+                    const reason = dockable
+                        ? `There are total of ${station["availableDocks"]} available docks at this station.`
+                        : `You can only dock ${station["availableDocks"]} bikes at this station. Please find other stations if you wish to dock all the bikes in one station or distribute them amongst multiple stations.`
+                    const message = dockable
+                        ? DOCKABLE_MESSAGE(bikesCount, stationId, reason)
+                        : NOT_DOCKABLE_MESSAGE(bikesCount, stationId, reason);
+                    result = {
+                        dockable,
+                        message
                     }
                 }
 
-                if(stationList) {
-                    const station = stationList.filter(station => station["id"] === stationId)[0]; // get station by station id
-                    if(station && !isEmpty(station)) {
-                        const dockable = station["availableDocks"] >= bikesCount;
-                        const reason = dockable
-                            ? `There are total of ${station["availableDocks"]} available docks at this station.`
-                            : `You can only dock ${station["availableDocks"]} bikes at this station. Please find other stations if you wish to dock all the bikes in one station or distribute them amongst multiple stations.`
-                        const message = dockable
-                            ? DOCKABLE_MESSAGE(bikesCount, stationId, reason)
-                            : NOT_DOCKABLE_MESSAGE(bikesCount, stationId, reason);
-                        result = {
-                            dockable,
-                            message
-                        }
-                    }
-
-                    cache.write(originalUrl, [result]); // write to cache
-                    res.json(result);
-                }
+                cache.write(originalUrl, [result]); // write to cache
             }
         }
     }
+
+    res.json(result);
 });
 
 // Error Handling

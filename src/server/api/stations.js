@@ -23,8 +23,6 @@ router.get("/", async (req, res, next) => {
         message: "Entering GET /stations"
     });
 
-    let err = null;
-
     // Validate page param
     let formattedPage;
     const { page } = req.query;
@@ -33,40 +31,34 @@ router.get("/", async (req, res, next) => {
             formattedPage = formatStrToNum(page); // Check if page is number
         }
         catch(e) {
-            err = new Error(`[Bad Request] Page format error: ${e.message}`);
-            next(err, req);
+            return next(new Error(`[Bad Request] Page format error: ${e.message}`), req);
         }
     }
 
     let resultSet = [];
-    if(!err) {
-        const originalUrl = req.originalUrl;
-        let stationList = cache.read(originalUrl);
-        if(!stationList.length) {
-            try {
-                const list = await getCitiBikeData();
-                if(list && list.length) {
-                    cache.write(originalUrl, list); // write to cache
-                }
-                stationList = list;
+    const originalUrl = req.originalUrl;
+    let stationList = cache.read(originalUrl);
+    if(!stationList.length) {
+        try {
+            const list = await getCitiBikeData();
+            if(list && list.length) {
+                cache.write(originalUrl, list); // write to cache
             }
-            catch(e) {
-                err = new Error(e.message);
-                next(err, req);
-            }
+            stationList = list;
         }
-
-        if(stationList) {
-            resultSet = stationList.map(station => pick(station, STATION_FIELDS));
-            if(formattedPage) { // Allow page query
-                resultSet = resultSet.slice((formattedPage-1)*DEFAULT_PAGE_LIMIT, formattedPage*DEFAULT_PAGE_LIMIT);
-            }
+        catch(e) {
+            return next(new Error(e.message), req);
         }
     }
 
-    if(!err) {
-        res.json(resultSet);
+    if(stationList) {
+        resultSet = stationList.map(station => pick(station, STATION_FIELDS));
+        if(formattedPage) { // Allow page query
+            resultSet = resultSet.slice((formattedPage-1)*DEFAULT_PAGE_LIMIT, formattedPage*DEFAULT_PAGE_LIMIT);
+        }
     }
+    
+    res.json(resultSet);
 });
 
 /**
@@ -79,8 +71,6 @@ router.get("/in-service", async (req, res, next) => {
         message: "Entering GET /stations/in-service"
     });
 
-    let err = null;
-
     // Validate page param
     let formattedPage;
     const { page } = req.query;
@@ -89,50 +79,44 @@ router.get("/in-service", async (req, res, next) => {
             formattedPage = formatStrToNum(page); // Check if page is number
         }
         catch(e) {
-            err = new Error(`[Bad Request] Page format error: ${e.message}`);
-            next(err, req);
+            return next(new Error(`[Bad Request] Page format error: ${e.message}`), req);
         }
     }
 
     let resultSet = [];
-    if(!err) {
-        const originalUrl = req.originalUrl;
-        const value = cache.read(originalUrl);
-        if(value.length) {
-            resultSet = value; // result found in the cache
-        } else {
-            let stationList = cache.read("/stations"); // check list already in the cache
-            if(!stationList.length) {
-                try {
-                    const list = await getCitiBikeData();
-                    if(list && list.length) {
-                        cache.write(originalUrl, list); // write to cache
-                    }
-                    stationList = list;
+    const originalUrl = req.originalUrl;
+    const value = cache.read(originalUrl);
+    if(value.length) {
+        resultSet = value; // result found in the cache
+    } else {
+        let stationList = cache.read("/stations"); // check list already in the cache
+        if(!stationList.length) {
+            try {
+                const list = await getCitiBikeData();
+                if(list && list.length) {
+                    cache.write(originalUrl, list); // write to cache
                 }
-                catch(e) {
-                    err = new Error(e.message);
-                    next(err, req);
-                }
+                stationList = list;
             }
+            catch(e) {
+                return next(new Error(e.message), req);
+            }
+        }
+        
+        if(stationList) {
+            resultSet = stationList.filter(station => station["statusValue"] === "In Service");
+            if(formattedPage) { // Allow page query
+                resultSet = resultSet.slice((formattedPage-1)*DEFAULT_PAGE_LIMIT, formattedPage*DEFAULT_PAGE_LIMIT);
+            }
+            resultSet = resultSet.map(station => pick(station, STATION_FIELDS));
             
-            if(stationList) {
-                resultSet = stationList.filter(station => station["statusValue"] === "In Service");
-                if(formattedPage) { // Allow page query
-                    resultSet = resultSet.slice((formattedPage-1)*DEFAULT_PAGE_LIMIT, formattedPage*DEFAULT_PAGE_LIMIT);
-                }
-                resultSet = resultSet.map(station => pick(station, STATION_FIELDS));
-                
-                if(resultSet.length) {
-                    cache.write(originalUrl, resultSet); // write to cache
-                }
+            if(resultSet.length) {
+                cache.write(originalUrl, resultSet); // write to cache
             }
         }
     }
 
-    if(!err) {
-        res.json(resultSet);
-    }
+    res.json(resultSet);
 });
 
 /**
@@ -145,8 +129,6 @@ router.get("/not-in-service", async (req, res, next) => {
         message: "Entering GET /stations/not-in-service"
     });
 
-    let err = null;
-
     // Validate page param
     let formattedPage;
     const { page } = req.query;
@@ -155,50 +137,44 @@ router.get("/not-in-service", async (req, res, next) => {
             formattedPage = formatStrToNum(page); // Check if page is number
         }
         catch(e) {
-            err = new Error(`[Bad Request] Page format error: ${e.message}`);
-            next(err, req);
+            return next(new Error(`[Bad Request] Page format error: ${e.message}`), req);
         }
     }
 
     let resultSet = [];
-    if(!err) {
-        const originalUrl = req.originalUrl;
-        const value = cache.read(originalUrl);
-        if(value.length) {
-            resultSet = value; // result found in the cache
-        } else {
-            let stationList = cache.read("/stations"); // check list already in the cache
-            if(!stationList.length) {
-                try {
-                    const list = await getCitiBikeData();
-                    if(list && list.length) {
-                        cache.write(originalUrl, list); // write to cache
-                    }
-                    stationList = list;
+    const originalUrl = req.originalUrl;
+    const value = cache.read(originalUrl);
+    if(value.length) {
+        resultSet = value; // result found in the cache
+    } else {
+        let stationList = cache.read("/stations"); // check list already in the cache
+        if(!stationList.length) {
+            try {
+                const list = await getCitiBikeData();
+                if(list && list.length) {
+                    cache.write(originalUrl, list); // write to cache
                 }
-                catch(e) {
-                    err = new Error(e.message);
-                    next(err, req);
-                }
+                stationList = list;
             }
+            catch(e) {
+                return next(new Error(e.message), req);
+            }
+        }
 
-            if(stationList) {
-                resultSet = stationList.filter(station => station["statusValue"] === "Not In Service");
-                if(formattedPage) {
-                    resultSet = resultSet.slice((formattedPage-1)*DEFAULT_PAGE_LIMIT, formattedPage*DEFAULT_PAGE_LIMIT); // Allow page query
-                }
-                resultSet = resultSet.map(station => pick(station, STATION_FIELDS));
-                
-                if(resultSet.length) {
-                    cache.write(originalUrl, resultSet); // write to cache
-                }
+        if(stationList) {
+            resultSet = stationList.filter(station => station["statusValue"] === "Not In Service");
+            if(formattedPage) {
+                resultSet = resultSet.slice((formattedPage-1)*DEFAULT_PAGE_LIMIT, formattedPage*DEFAULT_PAGE_LIMIT); // Allow page query
+            }
+            resultSet = resultSet.map(station => pick(station, STATION_FIELDS));
+            
+            if(resultSet.length) {
+                cache.write(originalUrl, resultSet); // write to cache
             }
         }
     }
 
-    if(!err) {
-        res.json(resultSet);
-    }
+    res.json(resultSet);
 });
 
 /**
@@ -211,45 +187,40 @@ router.get("/:searchstring", async (req, res, next) => {
         message: "Entering GET /stations/:searchstring"
     });
 
-    let err = null;
     let resultSet = [];
-    if(!err) {
-        const searchstring = req.params.searchstring;
-        const originalUrl = req.originalUrl;
-        const value = cache.read(originalUrl);
-        if(value.length) {
-            resultSet = value; // result found in the cache
-        } else {
-            let stationList = cache.read("/stations"); // check list already in the cache
-            if(!stationList.length) {
-                try {
-                    const list = await getCitiBikeData();
-                    if(list && list.length) {
-                        cache.write(originalUrl, list); // write to cache
-                    }
-                    stationList = list;
+    const searchstring = req.params.searchstring;
+    const originalUrl = req.originalUrl;
+    const value = cache.read(originalUrl);
+    if(value.length) {
+        resultSet = value; // result found in the cache
+    } else {
+        let stationList = cache.read("/stations"); // check list already in the cache
+        if(!stationList.length) {
+            try {
+                const list = await getCitiBikeData();
+                if(list && list.length) {
+                    cache.write(originalUrl, list); // write to cache
                 }
-                catch(e) {
-                    err = new Error(e.message);
-                    next(err, req);
-                }
+                stationList = list;
             }
+            catch(e) {
+                err = new Error(e.message);
+                return next(new Error(e.message), req);
+            }
+        }
 
-            if(stationList) {
-                resultSet = stationList
-                .filter(station => matchString(searchstring, station["stationName"]) || matchString(searchstring, station["stAddress1"]))
-                .map(station => pick(station, STATION_FIELDS));
-            
-                if(resultSet.length) {
-                    cache.write(originalUrl, resultSet); // write to cache
-                }
+        if(stationList) {
+            resultSet = stationList
+            .filter(station => matchString(searchstring, station["stationName"]) || matchString(searchstring, station["stAddress1"]))
+            .map(station => pick(station, STATION_FIELDS));
+        
+            if(resultSet.length) {
+                cache.write(originalUrl, resultSet); // write to cache
             }
         }
     }
 
-    if(!err) {
-        res.json(resultSet);
-    }
+    res.json(resultSet);
 });
 
 // Error Handling
