@@ -1,0 +1,38 @@
+{
+  "name": "nbc-take-home",
+  "version": "1.0.0",
+  "description": "NBC Take Home",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/server",
+    "test": "jest"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coveragePathIgnorePatterns": [
+      "/node_modules/"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yeb9925/nbc-take-home.git"
+  },
+  "author": "Tim Han",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yeb9925/nbc-take-home/issues"
+  },
+  "homepage": "https://github.com/yeb9925/nbc-take-home#readme",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "lodash": "^4.17.15",
+    "morgan": "^1.9.1",
+    "winston": "^3.2.1"
+  },
+  "devDependencies": {
+    "jest": "^25.1.0",
+    "supertest": "^4.0.2"
+  }
+}
