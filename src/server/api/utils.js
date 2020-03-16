@@ -4,6 +4,8 @@
  * @description Utils file for api folder
  */
 
+const { pickBy } = require("lodash");
+
  /**
  * Check string is valid
  * @param {string} str
@@ -45,7 +47,21 @@ const matchString = function(firstStr, secondStr) {
     return secondStr.includes(firstStr);
 };
 
+/**
+ * Detect any unsupported params
+ * @param {string[]} supportedParams
+ * @param {Object} queryParams
+ * @returns {void}
+ */
+const detectUnsupportedParams = function(supportedParams, queryParams) {
+    const unsupported = Object.keys(pickBy(queryParams, (val, key) => !supportedParams.includes(key)));
+    if(unsupported.length) {
+        throw new Error(`Unsupported parameter(s): ${unsupported.join(", ")}`);
+    }
+};
+
 module.exports = {
+    detectUnsupportedParams,
     formatStrToNum,
     isNumeric,
     matchString

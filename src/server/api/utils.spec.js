@@ -4,7 +4,7 @@
  * @description Test api utils methods
  */
 
-const { formatStrToNum, isNumeric, matchString } = require("./utils");
+const { detectUnsupportedParams, formatStrToNum, isNumeric, matchString } = require("./utils");
 
 describe("Test utils methods", () => {
     describe("formatStrToNum method", () => {
@@ -81,4 +81,14 @@ describe("Test utils methods", () => {
             expect(result).toBe(false);
         });
     });
+
+    describe("detectUnsupportedParams method", () => {
+        const supported = ["test", "test1"];
+
+        it("throws error if detected", () => {
+            expect(() => {
+                detectUnsupportedParams(supported, { test2: "test2" });
+            }).toThrow();
+        });
+    })
 });

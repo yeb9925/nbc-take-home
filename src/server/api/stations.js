@@ -5,11 +5,11 @@
  */
 
 const router = require("express").Router();
-const { pick, pickBy } = require("lodash");
+const { pick } = require("lodash");
 
 const cache = require("../cache/cache");
 const { DEFAULT_PAGE_LIMIT, STATION_FIELDS, STATIONS_SUPPORTED_PARAMS } = require("./constants");
-const { formatStrToNum, matchString } = require("./utils");
+const { detectUnsupportedParams, formatStrToNum, matchString } = require("./utils");
 const { getCitiBikeData } = require("../helper");
 const { createRequestLog } = require("../logger/logs");
 
@@ -24,9 +24,11 @@ router.get("/", async (req, res, next) => {
     });
 
     // Detect unsupported params
-    const unsupported = Object.keys(pickBy(req.query, (val, key) => !STATIONS_SUPPORTED_PARAMS.includes(key)));
-    if(unsupported.length) {
-        return next(new Error(`Unsupported parameter(s): ${unsupported.join(", ")}`), req);
+    try{
+        detectUnsupportedParams(STATIONS_SUPPORTED_PARAMS, req.query);
+    }
+    catch(e) {
+        return next(e, req);
     }
 
     // Validate page param
@@ -46,11 +48,10 @@ router.get("/", async (req, res, next) => {
     let stationList = cache.read(originalUrl);
     if(!stationList.length) {
         try {
-            const list = await getCitiBikeData();
-            if(list && list.length) {
-                cache.write(originalUrl, list); // write to cache
+            stationList = await getCitiBikeData();
+            if(stationList && stationList.length) {
+                cache.write(originalUrl, stationList); // write to cache
             }
-            stationList = list;
         }
         catch(e) {
             return next(new Error(e.message), req);
@@ -78,9 +79,11 @@ router.get("/in-service", async (req, res, next) => {
     });
 
     // Detect unsupported params
-    const unsupported = Object.keys(pickBy(req.query, (val, key) => !STATIONS_SUPPORTED_PARAMS.includes(key)));
-    if(unsupported.length) {
-        return next(new Error(`Unsupported parameter(s): ${unsupported.join(", ")}`), req);
+    try{
+        detectUnsupportedParams(STATIONS_SUPPORTED_PARAMS, req.query);
+    }
+    catch(e) {
+        return next(e, req);
     }
 
     // Validate page param
@@ -104,11 +107,10 @@ router.get("/in-service", async (req, res, next) => {
         let stationList = cache.read("/stations"); // check list already in the cache
         if(!stationList.length) {
             try {
-                const list = await getCitiBikeData();
-                if(list && list.length) {
-                    cache.write(originalUrl, list); // write to cache
+                stationList = await getCitiBikeData();
+                if(stationList && stationList.length) {
+                    cache.write(originalUrl, stationList); // write to cache
                 }
-                stationList = list;
             }
             catch(e) {
                 return next(new Error(e.message), req);
@@ -142,9 +144,11 @@ router.get("/not-in-service", async (req, res, next) => {
     });
 
     // Detect unsupported params
-    const unsupported = Object.keys(pickBy(req.query, (val, key) => !STATIONS_SUPPORTED_PARAMS.includes(key)));
-    if(unsupported.length) {
-        return next(new Error(`Unsupported parameter(s): ${unsupported.join(", ")}`), req);
+    try{
+        detectUnsupportedParams(STATIONS_SUPPORTED_PARAMS, req.query);
+    }
+    catch(e) {
+        return next(e, req);
     }
 
     // Validate page param
@@ -168,11 +172,10 @@ router.get("/not-in-service", async (req, res, next) => {
         let stationList = cache.read("/stations"); // check list already in the cache
         if(!stationList.length) {
             try {
-                const list = await getCitiBikeData();
-                if(list && list.length) {
-                    cache.write(originalUrl, list); // write to cache
+                stationList = await getCitiBikeData();
+                if(stationList && stationList.length) {
+                    cache.write(originalUrl, stationList); // write to cache
                 }
-                stationList = list;
             }
             catch(e) {
                 return next(new Error(e.message), req);
@@ -215,11 +218,10 @@ router.get("/:searchstring", async (req, res, next) => {
         let stationList = cache.read("/stations"); // check list already in the cache
         if(!stationList.length) {
             try {
-                const list = await getCitiBikeData();
-                if(list && list.length) {
-                    cache.write(originalUrl, list); // write to cache
+                stationList = await getCitiBikeData();
+                if(stationList && stationList.length) {
+                    cache.write(originalUrl, stationList); // write to cache
                 }
-                stationList = list;
             }
             catch(e) {
                 err = new Error(e.message);
@@ -229,8 +231,8 @@ router.get("/:searchstring", async (req, res, next) => {
 
         if(stationList) {
             resultSet = stationList
-            .filter(station => matchString(searchstring, station["stationName"]) || matchString(searchstring, station["stAddress1"]))
-            .map(station => pick(station, STATION_FIELDS));
+                .filter(station => matchString(searchstring, station["stationName"]) || matchString(searchstring, station["stAddress1"]))
+                .map(station => pick(station, STATION_FIELDS));
         
             if(resultSet.length) {
                 cache.write(originalUrl, resultSet); // write to cache
