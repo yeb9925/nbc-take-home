@@ -33,7 +33,7 @@ router.get("/", async (req, res, next) => {
             formattedPage = formatStrToNum(page); // Check if page is number
         }
         catch(e) {
-            err = new Error(`Page format error: ${e.message}`);
+            err = new Error(`[Bad Request] Page format error: ${e.message}`);
             next(err, req);
         }
     }
@@ -43,22 +43,28 @@ router.get("/", async (req, res, next) => {
         const originalUrl = req.originalUrl;
         let stationList = cache.read(originalUrl);
         if(!stationList.length) {
-            stationList = await getCitiBikeData()
-                .catch(e => {
-                    err = new Error(e.message);
-                    next(err, req);
-                });
+            try {
+                const list = await getCitiBikeData();
+                if(list && list.length) {
+                    cache.write(originalUrl, list); // write to cache
+                }
+                stationList = list;
+            }
+            catch(e) {
+                err = new Error(e.message);
+                next(err, req);
+            }
         }
 
-        resultSet = stationList.map(station => pick(station, STATION_FIELDS));
-        if(formattedPage) { // Allow page query
-            resultSet = resultSet.slice((formattedPage-1)*DEFAULT_PAGE_LIMIT, formattedPage*DEFAULT_PAGE_LIMIT);
+        if(stationList) {
+            resultSet = stationList.map(station => pick(station, STATION_FIELDS));
+            if(formattedPage) { // Allow page query
+                resultSet = resultSet.slice((formattedPage-1)*DEFAULT_PAGE_LIMIT, formattedPage*DEFAULT_PAGE_LIMIT);
+            }
         }
+    }
 
-        if(resultSet.length) {
-            cache.write(originalUrl, resultSet); // write to cache
-        }
-
+    if(!err) {
         res.json(resultSet);
     }
 });
@@ -83,7 +89,7 @@ router.get("/in-service", async (req, res, next) => {
             formattedPage = formatStrToNum(page); // Check if page is number
         }
         catch(e) {
-            err = new Error(`Page format error: ${e.message}`);
+            err = new Error(`[Bad Request] Page format error: ${e.message}`);
             next(err, req);
         }
     }
@@ -97,23 +103,34 @@ router.get("/in-service", async (req, res, next) => {
         } else {
             let stationList = cache.read("/stations"); // check list already in the cache
             if(!stationList.length) {
-                stationList = await getCitiBikeData()
-                    .catch(e => {
-                        err = new Error(e.message);
-                        next(err, req);
-                    });
+                try {
+                    const list = await getCitiBikeData();
+                    if(list && list.length) {
+                        cache.write(originalUrl, list); // write to cache
+                    }
+                    stationList = list;
+                }
+                catch(e) {
+                    err = new Error(e.message);
+                    next(err, req);
+                }
             }
-
-            resultSet = stationList.filter(station => station["statusValue"] === "In Service");
-            if(formattedPage) { // Allow page query
-                resultSet = resultSet.slice((formattedPage-1)*DEFAULT_PAGE_LIMIT, formattedPage*DEFAULT_PAGE_LIMIT);
-            }
-            resultSet = resultSet.map(station => pick(station, STATION_FIELDS));
             
-            if(resultSet.length) {
-                cache.write(originalUrl, resultSet); // write to cache
+            if(stationList) {
+                resultSet = stationList.filter(station => station["statusValue"] === "In Service");
+                if(formattedPage) { // Allow page query
+                    resultSet = resultSet.slice((formattedPage-1)*DEFAULT_PAGE_LIMIT, formattedPage*DEFAULT_PAGE_LIMIT);
+                }
+                resultSet = resultSet.map(station => pick(station, STATION_FIELDS));
+                
+                if(resultSet.length) {
+                    cache.write(originalUrl, resultSet); // write to cache
+                }
             }
         }
+    }
+
+    if(!err) {
         res.json(resultSet);
     }
 });
@@ -138,7 +155,7 @@ router.get("/not-in-service", async (req, res, next) => {
             formattedPage = formatStrToNum(page); // Check if page is number
         }
         catch(e) {
-            err = new Error(`Page format error: ${e.message}`);
+            err = new Error(`[Bad Request] Page format error: ${e.message}`);
             next(err, req);
         }
     }
@@ -152,24 +169,34 @@ router.get("/not-in-service", async (req, res, next) => {
         } else {
             let stationList = cache.read("/stations"); // check list already in the cache
             if(!stationList.length) {
-                stationList = await getCitiBikeData()
-                    .catch(e => {
-                        err = new Error(e.message);
-                        next(err, req);
-                    });
+                try {
+                    const list = await getCitiBikeData();
+                    if(list && list.length) {
+                        cache.write(originalUrl, list); // write to cache
+                    }
+                    stationList = list;
+                }
+                catch(e) {
+                    err = new Error(e.message);
+                    next(err, req);
+                }
             }
 
-            resultSet = stationList.filter(station => station["statusValue"] === "Not In Service");
-            if(formattedPage) {
-                resultSet = resultSet.slice((formattedPage-1)*DEFAULT_PAGE_LIMIT, formattedPage*DEFAULT_PAGE_LIMIT); // Allow page query
-            }
-            resultSet = resultSet.map(station => pick(station, STATION_FIELDS));
-            
-            if(resultSet.length) {
-                cache.write(originalUrl, resultSet); // write to cache
+            if(stationList) {
+                resultSet = stationList.filter(station => station["statusValue"] === "Not In Service");
+                if(formattedPage) {
+                    resultSet = resultSet.slice((formattedPage-1)*DEFAULT_PAGE_LIMIT, formattedPage*DEFAULT_PAGE_LIMIT); // Allow page query
+                }
+                resultSet = resultSet.map(station => pick(station, STATION_FIELDS));
+                
+                if(resultSet.length) {
+                    cache.write(originalUrl, resultSet); // write to cache
+                }
             }
         }
+    }
 
+    if(!err) {
         res.json(resultSet);
     }
 });
@@ -195,22 +222,32 @@ router.get("/:searchstring", async (req, res, next) => {
         } else {
             let stationList = cache.read("/stations"); // check list already in the cache
             if(!stationList.length) {
-                stationList = await getCitiBikeData()
-                    .catch(e => {
-                        err = new Error(e.message);
-                        next(err, req);
-                    });
+                try {
+                    const list = await getCitiBikeData();
+                    if(list && list.length) {
+                        cache.write(originalUrl, list); // write to cache
+                    }
+                    stationList = list;
+                }
+                catch(e) {
+                    err = new Error(e.message);
+                    next(err, req);
+                }
             }
 
-            resultSet = stationList
+            if(stationList) {
+                resultSet = stationList
                 .filter(station => matchString(searchstring, station["stationName"]) || matchString(searchstring, station["stAddress1"]))
                 .map(station => pick(station, STATION_FIELDS));
             
-            if(resultSet.length) {
-                cache.write(originalUrl, resultSet); // write to cache
+                if(resultSet.length) {
+                    cache.write(originalUrl, resultSet); // write to cache
+                }
             }
         }
-        
+    }
+
+    if(!err) {
         res.json(resultSet);
     }
 });

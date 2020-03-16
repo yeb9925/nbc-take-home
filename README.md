@@ -11,6 +11,8 @@
 
 **JSON Formatter (Chrome Extension):** [[Install](https://chrome.google.com/webstore/detail/json-formatter/bcjindcccaagfpapjjmafapmmgkkhgoa?hl=en)]
 
+**Data Source** [[Citi Bike Stations]](https://feeds.citibikenyc.com/stations/stations.json)
+
 **Node v8:**
 
 1. `brew install node@8`
@@ -43,32 +45,43 @@ npm test
 
 ### Stations
 * **Returns**: all stations
-* **Query Parameter(s)**: `page` (eg. `page=1`)
+* **Query Parameter(s)**:
+    * `page` (*@type number*)
+* **Example**: `/stations/?page=1`
 ```
 GET /stations
 ```
 
 * **Returns**: all "In Service" stations
-* **Query Parameter(s)**: `page` (eg. `page=1`)
+* **Query Parameter(s)**:
+    * `page` (*@type number*)
+* **Example**: `/stations/in-service?page=1`
 ```
 GET /stations/in-service
 ```
 
 * **Returns**: all "Not In Service" stations
-* **Query Parameter(s)**: `page` (eg. `page=1`)
+* **Query Parameter(s)**:
+    * `page` (*@type number*)
+* **Example**: `/stations/not-in-service?page=1`
 ```
 GET /stations/not-in-service
 ```
 
 * **Returns**: all stations with `searchstring` in "Station Name" or "Street Address"
-* **URL Parameter(s)**: `searchstring` (eg. `/stations/Broadway`)
+* **URL Parameter(s)**: 
+    * `searchstring` (*@type string*)
+* **Example**: `/stations/wth`
 ```
 GET /stations/:searchstring
 ```
 
 ### Dockable
-* Returns boolean `dockable` with message
-* **URL Parameter(s)**: `stationid` & `bikestoreturn` (eg. `/dockable/1234/23`)
+* **Returns**: boolean `dockable` with message
+* **URL Parameter(s)**:
+    * `stationid` (*@type number*)
+    * `bikestoreturn` (*@type number*) 
+* **Example**: `/dockable/1234/23`
 ```
 GET /dockable/:stationid/:bikestoreturn
 ```
