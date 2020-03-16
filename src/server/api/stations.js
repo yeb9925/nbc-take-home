@@ -5,10 +5,10 @@
  */
 
 const router = require("express").Router();
-const { pick } = require("lodash");
+const { pick, pickBy } = require("lodash");
 
 const cache = require("../cache/cache");
-const { DEFAULT_PAGE_LIMIT, STATION_FIELDS } = require("./constants");
+const { DEFAULT_PAGE_LIMIT, STATION_FIELDS, STATIONS_SUPPORTED_PARAMS } = require("./constants");
 const { formatStrToNum, matchString } = require("./utils");
 const { getCitiBikeData } = require("../helper");
 const { createRequestLog } = require("../logger/logs");
@@ -22,6 +22,12 @@ router.get("/", async (req, res, next) => {
         level: "info",
         message: "Entering GET /stations"
     });
+
+    // Detect unsupported params
+    const unsupported = Object.keys(pickBy(req.query, (val, key) => !STATIONS_SUPPORTED_PARAMS.includes(key)));
+    if(unsupported.length) {
+        return next(new Error(`Unsupported parameter(s): ${unsupported.join(", ")}`), req);
+    }
 
     // Validate page param
     let formattedPage;
@@ -70,6 +76,12 @@ router.get("/in-service", async (req, res, next) => {
         level: "info",
         message: "Entering GET /stations/in-service"
     });
+
+    // Detect unsupported params
+    const unsupported = Object.keys(pickBy(req.query, (val, key) => !STATIONS_SUPPORTED_PARAMS.includes(key)));
+    if(unsupported.length) {
+        return next(new Error(`Unsupported parameter(s): ${unsupported.join(", ")}`), req);
+    }
 
     // Validate page param
     let formattedPage;
@@ -128,6 +140,12 @@ router.get("/not-in-service", async (req, res, next) => {
         level: "info",
         message: "Entering GET /stations/not-in-service"
     });
+
+    // Detect unsupported params
+    const unsupported = Object.keys(pickBy(req.query, (val, key) => !STATIONS_SUPPORTED_PARAMS.includes(key)));
+    if(unsupported.length) {
+        return next(new Error(`Unsupported parameter(s): ${unsupported.join(", ")}`), req);
+    }
 
     // Validate page param
     let formattedPage;

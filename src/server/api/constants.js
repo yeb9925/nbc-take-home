@@ -6,5 +6,6 @@
 
 module.exports = {
     DEFAULT_PAGE_LIMIT: 20,
-    STATION_FIELDS: ["stationName", "stAddress1", "availableBikes", "totalDocks"]
+    STATION_FIELDS: ["stationName", "stAddress1", "availableBikes", "totalDocks"],
+    STATIONS_SUPPORTED_PARAMS: ["page"]
 };
