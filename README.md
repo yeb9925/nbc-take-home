@@ -9,8 +9,7 @@
 
 **Homebrew:** [[Install](https://docs.brew.sh/Installation.html)]
 
-Chrome Extension:
-**JSON Formatter:** [[Install](https://chrome.google.com/webstore/detail/json-formatter/bcjindcccaagfpapjjmafapmmgkkhgoa?hl=en)]
+**JSON Formatter (Chrome Extension):** [[Install](https://chrome.google.com/webstore/detail/json-formatter/bcjindcccaagfpapjjmafapmmgkkhgoa?hl=en)]
 
 **Node v8:**
 
